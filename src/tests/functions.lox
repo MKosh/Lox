@@ -1,0 +1,9 @@
+print "Starting";
+
+fun hello(first, last) {
+  print "Hello " + first + " " + last;
+}
+
+print hello;
+hello("Thomas", "Johns");
+print "Done!";

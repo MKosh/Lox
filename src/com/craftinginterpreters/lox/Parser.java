@@ -297,7 +297,7 @@ class Parser {
 
     while (true) {
       if (match(LEFT_PAREN)) {
-        epxr = finishCall(expr);
+        expr = finishCall(expr);
       } else {
         break;
       }
