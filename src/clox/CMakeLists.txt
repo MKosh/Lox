@@ -1,5 +1,5 @@
 # add_compile_definitions("DEBUG_TRACE_EXECUTION=$<CONFIG:Debug>")
-add_executable(clox main.c chunk.c memory.c debug.c value.c vm.c)
+add_executable(clox main.c chunk.c memory.c debug.c value.c vm.c compiler.c scanner.c)
 target_compile_definitions(clox PUBLIC "$<$<CONFIG:DEBUG>:DEBUG_TRACE_EXECUTION>")
 # target_compile_definitions(clox PRIVATE "DEBUG_TRACE_EXECUTION=$<IF:$<CONFIG:Debug>>")
 # target_compile_definitions(clox PRIVATE "DEBUG_TRACE_EXECUTION=$<IF:$<CONFIG:Debug>,1,0>")
