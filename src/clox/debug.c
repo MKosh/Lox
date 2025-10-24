@@ -3,6 +3,8 @@
 #include "debug.h"
 #include "value.h"
 
+/////////////////////////////////////////////////////////////////////
+///
 void disassembleChunk(Chunk* chunk, const char* name) {
   printf("== %s ==\n", name);
 
@@ -11,11 +13,15 @@ void disassembleChunk(Chunk* chunk, const char* name) {
   }
 }
 
+/////////////////////////////////////////////////////////////////////
+///
 static i32 simpleInstruction(const char* name, int offset) {
   printf("%s\n", name);
   return offset + 1;
 }
 
+/////////////////////////////////////////////////////////////////////
+///
 static i32 constantInstruction(const char* name, Chunk* chunk, i32 offset) {
   u8 constant = chunk->code[offset + 1];
   printf("%-16s %4d '", name, constant);
@@ -24,6 +30,8 @@ static i32 constantInstruction(const char* name, Chunk* chunk, i32 offset) {
   return offset + 2;
 }
 
+/////////////////////////////////////////////////////////////////////
+///
 int disassembleInstruction(Chunk *chunk, int offset) {
   printf("%04d ", offset);
   if (offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1]) {

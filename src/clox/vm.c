@@ -13,6 +13,8 @@ static void resetStack() {
   vm.stackTop = vm.stack;
 }
 
+/////////////////////////////////////////////////////////////////////
+///
 static void runtimeError(const char* format, ...) {
   va_list args;
   va_start(args, format);
@@ -26,37 +28,53 @@ static void runtimeError(const char* format, ...) {
   resetStack();
 }
 
+/////////////////////////////////////////////////////////////////////
+///
 void initVM() {
   resetStack();
 }
 
+/////////////////////////////////////////////////////////////////////
+///
 void freeVM() {
 
 }
 
+/////////////////////////////////////////////////////////////////////
+///
 void push(Value value) {
   *vm.stackTop = value;
   vm.stackTop++;
 }
 
+/////////////////////////////////////////////////////////////////////
+///
 Value pop() {
   vm.stackTop--;
   return *vm.stackTop;
 }
 
+/////////////////////////////////////////////////////////////////////
+///
 static Value peek(i32 distance) {
   return vm.stackTop[-1 - distance];
 }
 
+/////////////////////////////////////////////////////////////////////
+///
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
-#define BINARY_OP(op) \
+#define BINARY_OP(valueType, op) \
     do {\
-      double b = pop(); \
-      double a = pop(); \
-      push(a op b); \
-    } while (false);
+      if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
+        runtimeError("Operands must be numbers."); \
+        return INTERPRET_RUNTIME_ERROR; \
+      } \
+      f64 b = AS_NUMBER(pop()); \
+      f64 a = AS_NUMBER(pop()); \
+      push(valueType(a op b)); \
+    } while (false)
 
   for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
@@ -76,10 +94,10 @@ static InterpretResult run() {
         push(constant);
         break;
       }
-      case OP_ADD:      BINARY_OP(+); break;
-      case OP_SUBTRACT: BINARY_OP(-); break;
-      case OP_MULTIPLY: BINARY_OP(*); break;
-      case OP_DIVIDE:   BINARY_OP(/); break;
+      case OP_ADD:      BINARY_OP(NUMBER_VAL, +); break;
+      case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
+      case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
+      case OP_DIVIDE:   BINARY_OP(NUMBER_VAL, /); break;
       case OP_NEGATE:   
         if (!IS_NUMBER(peek(0))) {
           runtimeError("Operand must be a number.");
@@ -99,6 +117,8 @@ static InterpretResult run() {
 #undef BINARY_OP
 }
 
+/////////////////////////////////////////////////////////////////////
+///
 InterpretResult interpret(const char* source) {
   Chunk chunk;
   initChunk(&chunk);
