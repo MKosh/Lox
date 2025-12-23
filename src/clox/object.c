@@ -22,26 +22,41 @@ static Obj* allocateObject(size_t size, ObjType type) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
-static ObjString* allocateString(char* chars, i32 length) {
+static ObjString* allocateString(char* chars, i32 length, u32 hash) {
   ObjString* string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
   string->length = length;
+  string->hash = hash;
   string->chars = chars;
   return string;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+/// FNV-1a hash function
+static u32 hashString(const char* key, i32 length) {
+  u32 hash = 2166136261u;
+  for (size_t i = 0; i < length; ++i) {
+    hash ^= (u8)key[i];
+    hash *= 16777619;
+  }
+
+  return hash;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 ///
 ObjString* takeString(char* chars, i32 length) {
-  return allocateString(chars, length);
+  u32 hash = hashString(chars, length);
+  return allocateString(chars, length, hash);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
 ObjString* copyString(const char* chars, i32 length) {
+  u32 hash = hashString(chars, length);
   char* heapChars = ALLOCATE(char, length + 1);
   memcpy(heapChars, chars, length);
   heapChars[length] = '\0';
-  return allocateString(heapChars, length);
+  return allocateString(heapChars, length, hash);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
