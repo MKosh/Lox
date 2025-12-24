@@ -27,14 +27,63 @@ void freeTable(Table* table) {
 ///
 static Entry* findEntry(Entry* entries, i32 capacity, ObjString* key) {
   u32 index = key->hash % capacity;
+  Entry* tombstone = NULL;
+
   for (;;) {
     Entry* entry = &entries[index];
-    if (entry->key == key || entry->key == NULL) {
+    if (entry->key == NULL) {
+      if (IS_NIL(entry->value)) {
+        // Empty entry
+        return tombstone != NULL ? tombstone : entry;
+      } else {
+        // We found a tombstone
+        if (tombstone == NULL) tombstone = entry;
+      }
+    } else if (entry->key == key) {
+      // We found the key
       return entry;
     }
 
     index = (index + 1) % capacity;
   }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+///
+/// \param[in] table  The table to search
+/// \param[in] key    The key to search for
+/// \param[out] value The value at the key "key"
+bool tableGet(Table* table, ObjString* key, Value* value) {
+  if (table->count == 0) return false;
+
+  Entry* entry = findEntry(table->entries, table->capacity, key);
+  if (entry->key == NULL) return false;
+
+  *value = entry->value;
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+///
+static void adjustCapacity(Table* table, i32 capacity) {
+  Entry* entries = ALLOCATE(Entry, capacity);
+  for (size_t i = 0; i < capacity; i++) {
+    entries[i].key = NULL;
+    entries[i].value = NIL_VAL;
+  }
+
+  for (size_t i = 0; i < table->capacity; i++) {
+    Entry* entry = &table->entries[i];
+    if (entry->key == NULL) continue;
+
+    Entry* dest = findEntry(entries, capacity, entry->key);
+    dest->key = entry->key;
+    dest->value = entry->value;
+  }
+
+  FREE_ARRAY(Entry, table->entries, table->capacity);
+  table->entries = entries;
+  table->capacity = capacity;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,3 +103,31 @@ bool tableSet(Table* table, ObjString* key, Value value) {
 
   return is_new_key;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+///
+bool tableDelete(Table* table, ObjString* key) {
+  if (table->count == 0) return false;
+
+  // Find the entry.
+  Entry* entry = findEntry(table->entries, table->capacity, key);
+  if (entry->key == NULL) return false;
+
+  // Place a tombstone in the entry.
+  entry->key = NULL;
+  entry->value = BOOL_VAL(true);
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+///
+void tableAddAll(Table* from, Table* to) {
+  for (size_t i = 0; i < from->capacity; i++) {
+    Entry* entry = &from->entries[i];
+    if (entry->key != NULL) {
+      tableSet(to, entry->key, entry->value);
+    }
+  }
+}
+
+
